@@ -37,6 +37,44 @@ router.post(
   }
 );
 
+// Get All Users
+router.get("/", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const skip = (page - 1) * pageSize;
+
+  try {
+    const totalUsers = await prisma.user.count();
+    const users = await prisma.user.findMany({
+      skip,
+      take: pageSize,
+    });
+
+    const totalPages = Math.ceil(totalUsers / pageSize);
+
+    // Calculate next and previous page links
+    let nextPage = null;
+    let prevPage = null;
+    if (page < totalPages) {
+      nextPage = `/users?page=${page + 1}&pageSize=${pageSize}`;
+    }
+    if (page > 1) {
+      prevPage = `/users?page=${page - 1}&pageSize=${pageSize}`;
+    }
+
+    res.json({
+      count: totalUsers,
+      totalPages,
+      currentPage: page,
+      nextPage,
+      prevPage,
+      users,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -61,7 +99,7 @@ router.put("/:id", async (req, res) => {
     });
     res.json(user);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: "Error updating user" });
   }
 });
 

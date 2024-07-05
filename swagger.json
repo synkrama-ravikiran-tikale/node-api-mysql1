@@ -38,6 +38,26 @@
       },
       "get": {
         "tags": ["User"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "The page number to retrieve"
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "The number of users to retrieve per page"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of users",

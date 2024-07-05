@@ -13,6 +13,5 @@ app.use("/users", userRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`Swagger running on http://localhost:${PORT}/api-docs/`);
 });
