@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
     cb(null, "uploads/"); // Destination directory for uploaded files
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${file.originalname}-${Date.now()}`;
+    const uniqueName = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueName); // Save files with a unique nam
   },
 });
@@ -41,8 +41,9 @@ router.post(
     const { email, password, name } = req.body;
 
     // Get the photo file path
-    console.log("req.file", req.file);
-    const photo = req.file ? req.file.path : null;
+    const photo = req.file
+      ? `${req.file.destination + req.file.filename.replace(/\s/g, "")}`
+      : null;
 
     try {
       // Hash the password before storing it
@@ -88,7 +89,7 @@ router.get("/", async (req, res) => {
     }
     users.forEach((user) => {
       if (user.photo) {
-        user.photo = user.photo.replace(/\\/g, "/");
+        user.photo = `${process.env.CURRENT_URL}${user.photo}`;
       }
     });
     res.json({
@@ -110,7 +111,7 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
     if (user) {
-      user.photo = user.photo.replace(/\\/g, "/");
+      user.photo = `${process.env.port}/${user.photo}`;
       res.json(user);
     } else {
       res.status(404).json({ error: "User not found" });
@@ -127,10 +128,10 @@ router.put(
   async (req, res) => {
     const { id } = req.params;
     const { email, password, name } = req.body;
+
     const photo = req.file
-      ? `${req.file.destination + req.file.filename}`
+      ? `${req.file.destination + req.file.filename.replace(/\s/g, "")}`
       : null;
-    console.log("req.file", req.file);
 
     try {
       // Hash the password before updating it
