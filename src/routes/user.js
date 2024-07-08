@@ -3,9 +3,29 @@ const router = express.Router();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { body, validationResult } = require("express-validator");
+const multer = require("multer");
+const bcrypt = require("bcryptjs");
+const path = require("path");
 
+// Configure multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Specify the upload directory
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
+});
+const upload = multer({ storage: storage });
+
+// Create a user
 router.post(
   "/",
+  upload.single("photo"), // Middleware for handling single file upload with the name 'photo'
   body("email").isEmail().withMessage("Must be a valid email address"),
   body("password")
     .isLength({ min: 6 })
@@ -22,10 +42,16 @@ router.post(
     // Destructure validated data from request body
     const { email, password, name } = req.body;
 
+    // Get the photo file path
+    const photo = req.file ? req.file.path : null;
+
     try {
+      // Hash the password before storing it
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       // Create user using Prisma
       const user = await prisma.user.create({
-        data: { email, password, name },
+        data: { email, password: hashedPassword, name, photo },
       });
 
       // Respond with created user
@@ -75,6 +101,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get User by ID
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -89,20 +116,37 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
-  const { id } = req.params;
-  const { email, password, name } = req.body;
-  try {
-    const user = await prisma.user.update({
-      where: { id: Number(id) },
-      data: { email, password, name },
-    });
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ error: "Error updating user" });
-  }
-});
+// Update User
+router.put(
+  "/:id",
+  upload.single("photo"), // Middleware for handling single file upload with the name 'photo'
+  async (req, res) => {
+    const { id } = req.params;
+    const { email, password, name } = req.body;
+    const photo = req.file ? req.file.path : null;
 
+    try {
+      // Hash the password before updating it
+      let updateData = { email, name };
+      if (password) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+      if (photo) {
+        updateData.photo = photo;
+      }
+
+      const user = await prisma.user.update({
+        where: { id: Number(id) },
+        data: updateData,
+      });
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ error: "Error updating user" });
+    }
+  }
+);
+
+// Delete User
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {

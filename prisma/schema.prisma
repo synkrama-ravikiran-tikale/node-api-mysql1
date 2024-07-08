@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   password  String
   name      String
+  photo    String?  // Add this line for the photo field
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
