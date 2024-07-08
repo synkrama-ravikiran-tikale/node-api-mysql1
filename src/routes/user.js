@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
     cb(null, "uploads/"); // Destination directory for uploaded files
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
+    const uniqueName = `${Date.now()}-${file.originalname.replace(/\s/g, "")}`;
     cb(null, uniqueName); // Save files with a unique nam
   },
 });
@@ -42,7 +42,7 @@ router.post(
 
     // Get the photo file path
     const photo = req.file
-      ? `${req.file.destination + req.file.filename.replace(/\s/g, "")}`
+      ? `${req.file.destination + req.file.filename}`
       : null;
 
     try {
@@ -130,7 +130,7 @@ router.put(
     const { email, password, name } = req.body;
 
     const photo = req.file
-      ? `${req.file.destination + req.file.filename.replace(/\s/g, "")}`
+      ? `${req.file.destination + req.file.filename}`
       : null;
 
     try {
